@@ -1,58 +1,77 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
-import Header from '../components/Header';
 import FormInput from '../components/forms/FormInput';
 import FormButton from '../components/forms/FormButton';
 import noteService from '../services/noteService';
-import { FiUploadCloud, FiX } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
+import { FaUpload } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
-const UploadPage = () => {
+// A custom-styled select component to match our theme
+const FormSelect = ({ id, label, value, onChange, children }) => (
+  <div className="w-full">
+    <label htmlFor={id} className="block font-pixel text-lg text-primary mb-2 uppercase tracking-wide">
+      {label}
+    </label>
+    <div className="relative">
+      <select
+        id={id}
+        value={value}
+        onChange={onChange}
+        className="w-full appearance-none px-4 py-3 bg-base-200 text-text-light font-sans
+                   border-2 border-base-300
+                   focus:outline-none focus:border-primary"
+      >
+        {children}
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-primary">
+        <svg className="fill-current h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+      </div>
+    </div>
+  </div>
+);
+
+const Upload = () => {
     const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
     const [courseCode, setCourseCode] = useState('');
-    const [courseName, setCourseName] = useState('');
     const [visibility, setVisibility] = useState('public');
-    const [tags, setTags] = useState('');
-    const [files, setFiles] = useState([]);
-    const [error, setError] = useState('');
+    const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const handleFileChange = (e) => {
-        setFiles([...e.target.files]);
-    };
-
-    const removeFile = (index) => {
-        const newFiles = [...files];
-        newFiles.splice(index, 1);
-        setFiles(newFiles);
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (files.length === 0) {
-            setError('Please select at least one file to upload.');
+        if (!title || !courseCode) {
+            toast.error('Title and Course Code are required.');
             return;
         }
-        setError('');
         setLoading(true);
-
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('course_code', courseCode);
-        formData.append('course_name', courseName);
-        formData.append('visibility', visibility);
-        formData.append('tags', JSON.stringify(tags.split(',').map(tag => tag.trim())));
-
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files', files[i]);
-        }
+        const toastId = toast.loading('Uploading note...');
 
         try {
-            const data = await noteService.createNote(formData);
-            navigate(`/notes/${data.note.id}`);
+            const noteData = {
+                title,
+                description,
+                course_code: courseCode,
+                visibility,
+                user_id: user.id,
+            };
+
+            const newNote = await noteService.createNote(noteData, file);
+            toast.success('Note uploaded successfully!', { id: toastId });
+            navigate(`/notes/${newNote.id}`);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to upload note.');
+            console.error(err);
+            toast.error(err.message || 'Failed to upload note.', { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -60,73 +79,58 @@ const UploadPage = () => {
 
     return (
         <DashboardLayout>
-            <Header title="Upload New Note" />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-brand-background p-4 md:p-8">
-                <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormInput id="title" label="Note Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-                            <FormInput id="courseCode" label="Course Code" value={courseCode} onChange={(e) => setCourseCode(e.target.value)} required />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormInput id="courseName" label="Course Name (Optional)" value={courseName} onChange={(e) => setCourseName(e.target.value)} />
-                            <div>
-                                <label htmlFor="visibility" className="block text-sm font-medium text-gray-700 mb-1">Visibility</label>
-                                <select id="visibility" value={visibility} onChange={(e) => setVisibility(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
-                                    <option value="public">Public</option>
-                                    <option value="private">Private</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <FormInput id="tags" label="Tags (comma-separated)" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g. calculus, exam, chapter1" />
-                        </div>
+            <div className="mb-12">
+                <h1 className="text-5xl font-pixel text-accent mb-2">
+                    Upload Transmission
+                </h1>
+                <p className="text-text-light text-lg">
+                    Share new data with the collective. Fill out the fields below.
+                </p>
+            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Files</label>
-                            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                                <div className="space-y-1 text-center">
-                                    <FiUploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-                                    <div className="flex text-sm text-gray-600">
-                                        <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-brand-blue hover:text-brand-blue-dark focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-blue">
-                                            <span>Upload files</span>
-                                            <input id="file-upload" name="files" type="file" className="sr-only" multiple onChange={handleFileChange} />
-                                        </label>
-                                        <p className="pl-1">or drag and drop</p>
-                                    </div>
-                                    <p className="text-xs text-gray-500">PNG, JPG, PDF, DOCX up to 20MB</p>
+            <div className="max-w-4xl mx-auto bg-base-200 p-8 border-2 border-base-300 shadow-pixel-sm">
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <FormInput id="title" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="e.g., Chapter 5 Summary" />
+                        <FormInput id="courseCode" label="Course Code" value={courseCode} onChange={(e) => setCourseCode(e.target.value)} required placeholder="e.g., CS101" />
+                    </div>
+
+                    <FormInput id="description" label="Description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="A brief summary of the note's content..." />
+
+                    <div>
+                        <label className="block font-pixel text-lg text-primary mb-2 uppercase tracking-wide">File Attachment</label>
+                        <div className="mt-1 flex justify-center items-center px-6 pt-5 pb-6 border-2 border-base-300 border-dashed hover:border-primary transition-colors">
+                            <div className="space-y-1 text-center">
+                                <FaUpload className="mx-auto h-12 w-12 text-base-300" />
+                                <div className="flex text-sm text-text-light">
+                                    <label htmlFor="file-upload" className="relative cursor-pointer font-pixel text-primary hover:text-accent focus-within:outline-none">
+                                        <span>Upload a file</span>
+                                        <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} />
+                                    </label>
                                 </div>
+                                {file ? (
+                                    <p className="text-accent font-pixel">{file.name}</p>
+                                ) : (
+                                    <p className="text-xs text-base-300">PNG, JPG, PDF, DOCX up to 10MB</p>
+                                )}
                             </div>
                         </div>
+                    </div>
 
-                        {files.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-medium text-gray-700 mb-2">Selected files:</h4>
-                                <ul className="space-y-2">
-                                    {files.map((file, index) => (
-                                        <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
-                                            <span className="text-sm text-gray-800 truncate">{file.name}</span>
-                                            <button type="button" onClick={() => removeFile(index)} className="text-red-500 hover:text-red-700">
-                                                <FiX />
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
+                    <FormSelect id="visibility" label="Visibility" value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+                        <option value="public">Public (Visible to everyone)</option>
+                        <option value="private">Private (Visible only to you)</option>
+                    </FormSelect>
 
-                        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-                        <div className="text-right">
-                            <FormButton isLoading={loading} type="submit" fullWidth={false}>
-                                Upload Note
-                            </FormButton>
-                        </div>
-                    </form>
-                </div>
-            </main>
+                    <div className="text-right pt-4">
+                        <FormButton isLoading={loading} type="submit" fullWidth={false}>
+                            Transmit Note
+                        </FormButton>
+                    </div>
+                </form>
+            </div>
         </DashboardLayout>
     );
 };
 
-export default UploadPage;
+export default Upload;

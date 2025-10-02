@@ -1,60 +1,64 @@
 import React from 'react';
-import { FiDownload, FiEye, FiUser, FiTag } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
+import { FaUser, FaCode, FaFilePdf, FaFileImage, FaFileWord, FaQuestionCircle } from 'react-icons/fa';
 
 const NoteCard = ({ note }) => {
-  const fileCount = note.files?.length || 0;
-  const firstFile = note.files?.[0];
+  // Gracefully handle cases where a note might be null or undefined.
+  if (!note) {
+    return null;
+  }
 
-  const getFileTypeLabel = (mimetype) => {
-    if (mimetype.startsWith('image/')) return `${fileCount} Image(s)`;
-    if (mimetype === 'application/pdf') return `${fileCount} PDF(s)`;
-    if (mimetype.includes('word')) return `${fileCount} DOCX`;
-    return `${fileCount} File(s)`;
+  const getFileTypeIcon = (fileType) => {
+    if (!fileType) return <FaQuestionCircle className="mr-2" />;
+    if (fileType.startsWith('image/')) return <FaFileImage className="mr-2" />;
+    if (fileType === 'application/pdf') return <FaFilePdf className="mr-2" />;
+    if (fileType.includes('word')) return <FaFileWord className="mr-2" />;
+    return <FaQuestionCircle className="mr-2" />;
   };
 
+  // Safe access to nested properties with fallbacks.
+  const username = note.profiles?.username || 'Anonymous';
+  const fileTypeDisplay = note.file_type ? note.file_type.split('/')[1].toUpperCase() : 'No File';
+
   return (
-    <Link to={`/notes/${note.id}`} className="block bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
-      <div className="flex justify-between items-start mb-3">
-        <h3 className="text-xl font-bold text-gray-800 truncate">{note.title}</h3>
-        {firstFile && (
-            <span className="text-xs font-semibold text-white bg-brand-blue px-2 py-1 rounded-full">
-                {getFileTypeLabel(firstFile.mimetype)}
-            </span>
-        )}
-      </div>
-      <p className="text-brand-blue font-semibold mb-3">{note.course_code}</p>
-
-      <div className="text-sm text-gray-500 space-y-2">
-        <div className="flex items-center">
-            <FiUser className="mr-2" />
-            <span>Shared by {note.uploader?.full_name || 'Unknown'}</span>
+    <Link
+      to={`/notes/${note.id}`}
+      className="block bg-base-200 p-4 border-2 border-base-300
+                 shadow-pixel-sm hover:shadow-pixel-sm-primary
+                 transition-all duration-200 ease-out
+                 hover:-translate-y-1 group flex flex-col h-full"
+    >
+      {/* Card Header */}
+      <div className="flex-grow">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="text-2xl font-pixel text-primary group-hover:text-secondary truncate">
+            {note.title || 'Untitled Note'}
+          </h3>
+          <span className="text-xs font-pixel text-accent capitalize bg-base-300 px-2 py-1">
+            {note.visibility || 'private'}
+          </span>
         </div>
-        <div className="flex items-center">
-            <FiEye className="mr-2" />
-            <span className="capitalize">{note.visibility}</span>
-        </div>
-        {note.tags && note.tags.length > 0 && (
-            <div className="flex items-center flex-wrap pt-2">
-                <FiTag className="mr-2" />
-                {note.tags.map(tag => (
-                    <span key={tag} className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full mr-1 mb-1">{tag}</span>
-                ))}
-            </div>
-        )}
-      </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-        <p className="text-xs text-gray-400">
-            {new Date(note.created_at).toLocaleDateString()}
+        <div className="flex items-center text-accent mb-4">
+          <FaCode className="mr-2" />
+          <p className="font-pixel text-lg">{note.course_code || 'General'}</p>
+        </div>
+
+        <p className="text-text-light font-sans mb-4 truncate">
+          {note.description || 'No description provided.'}
         </p>
-        <button
-            onClick={(e) => { e.preventDefault(); alert('Download clicked!'); }}
-            className="flex items-center text-sm font-medium text-brand-blue hover:underline"
-        >
-            <FiDownload className="mr-1" />
-            Download All
-        </button>
+      </div>
+
+      {/* Card Footer */}
+      <div className="flex items-center justify-between pt-3 border-t-2 border-base-300 mt-auto">
+        <div className="flex items-center text-sm text-primary">
+          <FaUser className="mr-2" />
+          <span>{username}</span>
+        </div>
+        <div className="flex items-center text-sm text-primary">
+          {getFileTypeIcon(note.file_type)}
+          <span>{fileTypeDisplay}</span>
+        </div>
       </div>
     </Link>
   );

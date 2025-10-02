@@ -1,76 +1,76 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FormInput from '../components/forms/FormInput';
 import FormButton from '../components/forms/FormButton';
+import toast from 'react-hot-toast';
 
-const LoginPage = () => {
+const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const { login } = useAuth();
-    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
+        const toastId = toast.loading('Signing in...');
         try {
-            await login({ email, password });
-            navigate('/dashboard');
+            await login(email, password);
+            toast.success('Signed in successfully!', { id: toastId });
+            // The AuthProvider and router will handle the redirect automatically.
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+            toast.error(err.message || 'Invalid login credentials.', { id: toastId });
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-brand-background px-4">
-            <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-base-100 p-4">
+            <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800">Welcome back</h1>
-                    <p className="text-gray-500 mt-2">Please sign in to continue.</p>
+                    <h1 className="text-6xl font-pixel text-accent animate-pulse-glow">Lectura</h1>
+                    <p className="font-pixel text-xl text-primary mt-2">Log in to the Grid</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <FormInput
-                        id="email"
-                        label="Email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        required
-                    />
-                    <FormInput
-                        id="password"
-                        label="Password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        required
-                    />
-                    <div className="text-right">
-                        <Link to="/forgot-password" className="text-sm font-medium text-brand-blue hover:underline">
-                            Forgot password?
-                        </Link>
-                    </div>
+                <div className="bg-base-200 p-8 border-2 border-base-300 shadow-pixel-sm">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <FormInput
+                            id="email"
+                            label="Email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="pilot@lectura.io"
+                            required
+                        />
+                        <FormInput
+                            id="password"
+                            label="Password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="************"
+                            required
+                        />
+                        <div className="text-right">
+                            <Link to="/forgot-password" className="text-sm font-pixel text-primary hover:text-accent hover:underline">
+                                Forgot Password?
+                            </Link>
+                        </div>
 
-                    {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                        <FormButton type="submit" isLoading={loading} fullWidth={true}>
+                            Engage
+                        </FormButton>
+                    </form>
+                </div>
 
-                    <FormButton isLoading={loading}>
-                        Sign In
-                    </FormButton>
-                </form>
-
-                <p className="text-center text-sm text-gray-600 mt-8">
-                    Don't have an account?{' '}
-                    <Link to="/signup" className="font-medium text-brand-blue hover:underline">
-                        Sign up
+                <p className="text-center text-md font-pixel text-text-light mt-8">
+                    No account?{' '}
+                    <Link to="/signup" className="font-bold text-primary hover:text-accent hover:underline">
+                        Create one
                     </Link>
                 </p>
             </div>
@@ -78,4 +78,4 @@ const LoginPage = () => {
     );
 };
 
-export default LoginPage;
+export default Login;
