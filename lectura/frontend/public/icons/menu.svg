@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- A pixel-art style hamburger menu icon -->
+  <path d="M2 6 L22 6" stroke-width="4" />
+  <path d="M2 12 L22 12" stroke-width="4" />
+  <path d="M2 18 L22 18" stroke-width="4" />
+</svg>

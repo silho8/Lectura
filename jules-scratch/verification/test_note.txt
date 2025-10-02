@@ -1,0 +1,2 @@
+This is a test file for the automated verification script.
+Its content is not important, only that it can be successfully uploaded.

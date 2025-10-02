@@ -1,79 +1,102 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import authService from '../services/authService';
-import api from '../services/api';
+import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
+import { supabase } from '../supabaseClient';
 
 const AuthContext = createContext(null);
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    const fetchUser = useCallback(async () => {
-        try {
-            const response = await api.get('/users/me');
-            if (response.data.user) {
-                setUser(response.data.user);
-            } else {
-                setUser(null);
-            }
-        } catch (error) {
-            setUser(null);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    // This effect runs on initial load to check if a user session exists
-    useEffect(() => {
-        fetchUser();
-    }, [fetchUser]);
-
-    const login = async (credentials) => {
-        try {
-            const data = await authService.login(credentials);
-            setUser(data.user);
-            return data;
-        } catch (error) {
-            setUser(null);
-            throw error;
-        }
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Fetch profile and merge with user data
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        setUser({ ...session.user, ...profile });
+      }
+      setLoading(false);
     };
 
-    const signup = async (credentials) => {
-        try {
-            const data = await authService.signup(credentials);
-            // After signup, we get a token but also need to set the user state
-            setUser(data.user);
-            // The backend should also set the cookie upon signup, or we login right after.
-            // The current backend login sets the cookie, but signup only returns a token.
-            // I will adjust this later. For now, this sets the client state.
-            return data;
-        } catch (error) {
-            setUser(null);
-            throw error;
-        }
-    }
+    getSession();
 
-    const logout = async () => {
-        // Client-side logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        setUser({ ...session.user, ...profile });
+      } else {
         setUser(null);
-        // We'd also call a backend endpoint if it existed to clear the HttpOnly cookie
-    };
+      }
+    });
 
-    const value = {
-        user,
-        loading,
-        login,
-        logout,
-        signup,
-        isAuthenticated: !!user,
+    return () => {
+      subscription?.unsubscribe();
     };
+  }, []);
 
-    return (
-        <AuthContext.Provider value={value}>
-            {!loading && children}
-        </AuthContext.Provider>
-    );
+  const signup = async (email, password, fullName, username) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          username: username,
+        },
+      },
+    });
+    if (error) throw error;
+    // The onAuthStateChange listener will handle setting the user state.
+    return data;
+  };
+
+  const login = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    // The onAuthStateChange listener will handle setting the user state.
+    return data;
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    setUser(null); // Clear user state immediately
+  };
+
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      logout,
+      signup,
+      isAuthenticated: !!user,
+    }),
+    [user, loading]
+  );
+
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };

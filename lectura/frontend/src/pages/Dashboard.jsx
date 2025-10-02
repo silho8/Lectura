@@ -1,60 +1,78 @@
 import React from 'react';
-import { FiFileText, FiCpu, FiUsers, FiSettings } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../layouts/DashboardLayout';
-import Header from '../components/Header';
 
-const DashboardCard = ({ icon, title, description, color }) => {
-    const IconComponent = icon;
-    return (
-        <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300">
-            <div className={`w-12 h-12 flex items-center justify-center rounded-full bg-${color}-100 mb-4`}>
-                <IconComponent size={24} className={`text-${color}-600`} />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-1">{title}</h3>
-            <p className="text-gray-500">{description}</p>
-        </div>
-    );
+const DashboardCard = ({ to, iconUrl, title, description, color }) => {
+  const colorClasses = {
+    primary: 'hover:shadow-pixel-sm-primary hover:border-primary',
+    secondary: 'hover:shadow-pixel-sm-secondary hover:border-secondary',
+    accent: 'hover:shadow-pixel-sm-accent hover:border-accent',
+  };
+
+  return (
+    <Link
+      to={to}
+      className={`
+        block bg-base-200 p-6 border-2 border-base-300
+        shadow-pixel-sm transition-all duration-200 ease-out
+        hover:-translate-y-1 group ${colorClasses[color]}
+      `}
+    >
+      <div className="flex items-center mb-4">
+        <img src={iconUrl} alt={`${title} icon`} className="w-10 h-10 mr-4" />
+        <h3 className="text-3xl font-pixel text-primary group-hover:text-secondary truncate">
+          {title}
+        </h3>
+      </div>
+      <p className="text-text-light font-sans">{description}</p>
+    </Link>
+  );
 };
 
 const Dashboard = () => {
-    // This would come from auth context in a real app
-    const user = { fullName: "Jane Doe" };
+    const { user } = useAuth();
 
     return (
         <DashboardLayout>
-            <Header title="Dashboard" userName={user.fullName} />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-brand-background p-4 md:p-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800">Welcome, {user.fullName}!</h1>
-                    <p className="text-gray-600 mt-1">Here's a summary of your activities.</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <DashboardCard
-                        icon={FiFileText}
-                        title="Notes"
-                        description="Upload and share lecture notes easily."
-                        color="blue"
-                    />
-                    <DashboardCard
-                        icon={FiCpu}
-                        title="CGPA"
-                        description="Track and calculate your GPA seamlessly."
-                        color="green"
-                    />
-                    <DashboardCard
-                        icon={FiUsers}
-                        title="Community"
-                        description="Connect with fellow students."
-                        color="purple"
-                    />
-                    <DashboardCard
-                        icon={FiSettings}
-                        title="Settings"
-                        description="Manage your profile and preferences."
-                        color="gray"
-                    />
-                </div>
-            </main>
+            <div className="mb-12">
+                <h1 className="text-5xl font-pixel text-accent mb-2">
+                    Welcome, {user?.username || 'Gamer'}!
+                </h1>
+                <p className="text-text-light text-lg">
+                    Ready to conquer your courses? Let's get started.
+                </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+                <DashboardCard
+                    to="/notes"
+                    iconUrl="/icons/notes.svg"
+                    title="Notes"
+                    description="Browse and manage all shared study materials."
+                    color="primary"
+                />
+                <DashboardCard
+                    to="/upload"
+                    iconUrl="/icons/upload.svg"
+                    title="Upload"
+                    description="Share a new note, document, or image with the class."
+                    color="secondary"
+                />
+                <DashboardCard
+                    to="/cgpa"
+                    iconUrl="/icons/calculator.svg"
+                    title="CGPA Calc"
+                    description="Calculate your GPA and track your academic progress."
+                    color="accent"
+                />
+                <DashboardCard
+                    to="/profile"
+                    iconUrl="/icons/profile.svg"
+                    title="Profile"
+                    description="Manage your account settings and public profile."
+                    color="primary"
+                />
+            </div>
         </DashboardLayout>
     );
 };

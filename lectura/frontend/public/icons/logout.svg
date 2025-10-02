@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- A pixel-art style icon for logout -->
+  <!-- Door frame -->
+  <path d="M10 2 L18 2 L18 22 L10 22 Z" stroke-width="2"/>
+  <!-- Arrow -->
+  <path d="M14 12 L2 12" stroke-width="3" />
+  <path d="M6 8 L2 12 L6 16" stroke-width="3" />
+</svg>

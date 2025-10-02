@@ -1,12 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #F0F2F5; /* Light gray background from theme */
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  body {
+    @apply bg-base-100 text-text-light font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-pixel text-primary;
+  }
+
+  /* Forcing a more 'pixelated' look on images */
+  img, video {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Custom scrollbar for a more stylized look */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2C2C2C; /* base-200 */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #00FFFF; /* primary */
+  border: 2px solid #2C2C2C; /* base-200 */
 }
